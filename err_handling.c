@@ -8,7 +8,7 @@ main()
 {
 	int fd;
 	fd = open("./helloopen.txt", O_RDWR);
-    //printf("open fd = %d\n", fd);
+	//printf("open fd = %d\n", fd);
 	printf("open errno = %d\n", errno);
 	perror("open");
 	char hello[] = "hello open!\n";
