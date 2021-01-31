@@ -12,7 +12,7 @@ main()
 	printf("open errno = %d\n", errno);
 	perror("open");
 	char hello[] = "hello open!\n";
-	//printf("sizeof(hello array) = %d\n",sizeof(hello));
+	//printf("sizeof(hello array) = %d\n",sizeof(hello));	!    !
 	int a =	write(fd, hello, sizeof(hello) - 1);
 	perror("write");
 	close(fd);
