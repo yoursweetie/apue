@@ -62,6 +62,7 @@ int main()
 > > * 实型常量: 3.14, 1.5, ...
 > > * 字符常量: 由单引号引起来的一个字符或转义字符,如'a', 'X', '\n', '\t', ...
 > > * 字符串常量: 由双引号引起来的一个或多个字符组成的序列,"a", "abcXY", "abc\n\021\018",""(空串), 字符串常量最后有一个转义字符'\0',即NULL字符, 来表示字符串的结束.尤其要注意的是,字符串常量放置在.rodata section中,所以不能对其修改,否则会segmentation fault.
+> > * 标识符常量: #define BUFFSIZE 1024
 > 
 > 
 > **变量**
@@ -105,36 +106,100 @@ int main()
 > ```
 > ***static修饰的变量x,不论在哪里,一旦被定义过了,那么x就一直在被操作,它在内存中的地址也一直不变,因为它是在数据段中,不是在堆栈段.***
 
+## 全局变量的缺点
+来看这样一个程序:
+```c
+#include <stdio.h>
+#include <stdlib.h>
 
+int i = 0;
 
+void func(void)
+{
+    for(int i = 0; i < 5; i++)
+    {
+        fprintf(stdout, "*");
+        fprintf(stdout, "in %s, i = %d\n", __FUNCTION__, i);
+    }
+}
+int main()
+{
+    for(i = 0; i < 5; i++)
+    {
+        func();
+        fprintf(stdout, "in %s, i = %d\n", __FUNCTION__, i);
+    }
 
+    exit(0);
+}
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## 多文件编译
+> #### main.c:
+> ```c
+> #include <stdio.h>
+> #include <stdlib.h>
+> #include "example.h"
+> 
+> //int i = 1;
+> 
+> int
+> main()
+> {
+>     //fprintf(stdout, "[%s]: i = %d\n", __FUNCTION__, i);
+>     fprintf(stdout, "hello from main\n");
+>     func();
+> 
+>     exit(0);
+> }
+> ```
+> #### example.c:
+> ```c
+> #include <stdio.h>
+> #include <stdlib.h>
+> 
+> //int i = 1;
+> 
+> void
+> func(void)
+> {
+>     //fprintf(stdout, "[%s]: i = %d\n", __FUNCTION__, i);
+>     fprintf(stdout, "hello from example.c\n");
+> 
+>     exit(0);
+> }
+> ```
+> #### example.h:
+> ```c
+> #ifndef EXAMPLE_H__
+> #define EXAMPLE_H__
+> 
+> void func(void);
+> 
+> #endif
+> ```
+> #### gcc main.c example.c -E预处理之后结果比较长,就不放上来了,但是大概结构就是:
+> ```c
+> #include <stdio.h>
+> #include <stdlib.h>
+> 
+> void func(void);
+> 
+> int
+> main()
+> {
+>     fprintf(stdout, "hello from main\n");
+>     func();
+> 
+>     exit(0);
+> }
+> 
+> void func(void)
+> {
+> 
+>     fprintf(stdout, "hello from example.c\n");
+> 
+>     exit(0);
+> }
+> ```
+> ###### 可以看到,与我们把整个小项目一起写是一样的,出现头文件这个技术原因,大概是为了让分工合作更加方便.
