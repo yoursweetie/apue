@@ -203,3 +203,7 @@ int main()
 > }
 > ```
 > ###### 可以看到,与我们把整个小项目一起写是一样的,出现头文件这个技术原因,大概是为了让分工合作更加方便.
+
+## libc.a
+> In most Linux OS, we can find it in **/usr/lib/libc.a**, it's a collection of *.o file(objective file, which has been compiled but **not** linked), we can see lots of objective files in it such as stdio.o etc.
+> When we compile our c source file by gcc, we can use this option: **-static**. `gcc example.c -static` Then all objective file which is depended by example.c will be in ELF.
