@@ -40,7 +40,6 @@ main(int argc, char **argv)
         write(fp_dest, buf, nbytes);
     }
 
-
     close(fp_dest);
     close(fp_src);
     exit(0);
