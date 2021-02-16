@@ -4,6 +4,6 @@
 int
 main()
 {
-	printf("%x\n", EOF);
-	exit(0);
+    printf("%x\n", EOF);
+    exit(0);
 }
