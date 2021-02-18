@@ -207,3 +207,79 @@ int main()
 ## libc.a
 > In most Linux OS, we can find it in **/usr/lib/libc.a**, it's a collection of *.o file(objective file, which has been compiled but **not** linked), we can see lots of objective files in it such as stdio.o etc.
 > When we compile our c source file by gcc, we can use this option: **-static**. `gcc example.c -static` Then all objective file which is depended by example.c will be in ELF.
+
+## 数组在汇编中的实现:
+#### 先来看一段给数组中的元素赋值并打印到终端的C代码:
+```c
+//test.c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    char arr[6];
+    for (int i = 0; i < 6; i++)
+    {
+        arr[i] = i;
+    }
+
+    for (int i = 0; i < 6; i++)
+    {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+    exit(0);
+}
+
+```
+#### 编译成test ELF文件
+#### 这是`objdump -d test`反汇编的结果(只保留了main函数):
+
+```assembly
+test:     file format elf64-x86-64
+
+0000000000001149 <main>:
+    1149:	55                   	push   rbp
+    114a:	48 89 e5             	mov    rbp,rsp
+    114d:	48 83 ec 20          	sub    rsp,0x20
+    1151:	64 48 8b 04 25 28 00 	mov    rax,QWORD PTR fs:0x28
+    1158:	00 00 
+    115a:	48 89 45 f8          	mov    QWORD PTR [rbp-0x8],rax
+    115e:	31 c0                	xor    eax,eax
+    1160:	c7 45 e8 00 00 00 00 	mov    DWORD PTR [rbp-0x18],0x0
+    1167:	eb 12                	jmp    117b <main+0x32>
+    1169:	8b 45 e8             	mov    eax,DWORD PTR [rbp-0x18]
+    116c:	89 c2                	mov    edx,eax
+    116e:	8b 45 e8             	mov    eax,DWORD PTR [rbp-0x18]
+    1171:	48 98                	cdqe   
+    1173:	88 54 05 f2          	mov    BYTE PTR [rbp+rax*1-0xe],dl
+    1177:	83 45 e8 01          	add    DWORD PTR [rbp-0x18],0x1
+    117b:	83 7d e8 05          	cmp    DWORD PTR [rbp-0x18],0x5
+    117f:	7e e8                	jle    1169 <main+0x20>
+    1181:	c7 45 ec 00 00 00 00 	mov    DWORD PTR [rbp-0x14],0x0
+    1188:	eb 27                	jmp    11b1 <main+0x68>
+    118a:	8b 45 ec             	mov    eax,DWORD PTR [rbp-0x14]
+    118d:	48 98                	cdqe   
+    118f:	0f b6 44 05 f2       	movzx  eax,BYTE PTR [rbp+rax*1-0xe]
+    1194:	0f be d0             	movsx  edx,al
+    1197:	8b 45 ec             	mov    eax,DWORD PTR [rbp-0x14]
+    119a:	89 c6                	mov    esi,eax
+    119c:	48 8d 3d 61 0e 00 00 	lea    rdi,[rip+0xe61]        # 2004 <_IO_stdin_used+0x4>
+    11a3:	b8 00 00 00 00       	mov    eax,0x0
+    11a8:	e8 83 fe ff ff       	call   1030 <printf@plt>
+    11ad:	83 45 ec 01          	add    DWORD PTR [rbp-0x14],0x1
+    11b1:	83 7d ec 05          	cmp    DWORD PTR [rbp-0x14],0x5
+    11b5:	7e d3                	jle    118a <main+0x41>
+    11b7:	bf 00 00 00 00       	mov    edi,0x0
+    11bc:	e8 7f fe ff ff       	call   1040 <exit@plt>
+    11c1:	66 2e 0f 1f 84 00 00 	cs nop WORD PTR [rax+rax*1+0x0]
+    11c8:	00 00 00 
+    11cb:	0f 1f 44 00 00       	nop    DWORD PTR [rax+rax*1+0x0]
+    ```
+
+赋值操作是从1160: `mov DWORD PTR [rbp-0x18],0x0`开始,[rbp-0x18]是赋值语句中的i, jmp到117b,判断i是否 <= 5, 若 <= 5则跳回1169继续赋值.
+注意1173`mov BYTE PTR [rbp+rax*1-0xe],dl`,dl中的值是从edx中截断的,而edx又是从eax中得到的,eax的值正是[rbp-0x18]的值,即i的值.
+传递顺序是这样的:**i = DWORD PTR [rbp-0x18] -> eax -> edx(dl) -> BYTE PTR [rbp+rax*1-0xe]**.
+*这里`[rbp+rax*1-0xe]`就是数组每个元素的地址,每次赋值后rax的值加一,以此实现了下一次赋值就是下一个数组中元素的地址.*
+**`[rbp-0xe]`就是该数组的首地址(此时rax=0).**
+*由此看来数组和普通的局部变量差不多,只是多了一个rax\*x(x = 1, 2, 4, 8,...),简化了寻址方式.*
+可以推断,如果这是一个int型的数组,那`rax*`1会变成`rax*4`
