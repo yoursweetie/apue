@@ -283,3 +283,70 @@ test:     file format elf64-x86-64
 **`[rbp-0xe]`就是该数组的首地址(此时rax=0).**
 *由此看来数组和普通的局部变量差不多,只是多了一个rax\*x(x = 1, 2, 4, 8,...),简化了寻址方式.*
 可以推断,如果这是一个int型的数组,那`rax*`1会变成`rax*4`
+
+## 宏
+来看这样一个程序:
+```c
+//test.c
+#include <stdio.h>
+
+#define __DEBUG__ 0
+
+int main()
+{
+#if __DEBUG__
+    printf("IN DEBUG!\n");
+#endif
+    printf("hello world!\n");
+    return 0;
+}
+```
+`gcc test.c -E`:
+(只保留了main函数预处理后的内容)
+```c
+# 4 "test.c"
+int main()
+{
+
+
+
+    printf("hello world!\n");
+    return 0;
+}
+```
+
+当源码中`#define __DEBUG__ 0`变成`#define __DEBUG__ 1`,再进行预处理:
+```c
+
+# 4 "test.c"
+int main()
+{
+
+    printf("IN DEBUG!\n");
+
+    printf("hello world!\n");
+    return 0;
+}
+```
+可以神奇地发现被`#if DEBUG`和`#endif`包含的内容出现在了预处理后的文件中
+这表明在预处理时,宏就被处理掉了.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
