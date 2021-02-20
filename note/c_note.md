@@ -331,7 +331,29 @@ int main()
 可以神奇地发现被`#if DEBUG`和`#endif`包含的内容出现在了预处理后的文件中
 这表明在预处理时,宏就被处理掉了.
 
+## string
+字符串如果是在声明数组时出现,那这一个字符串的内容是可以被改变的.
+如下程序声明并初始化char dest[10]数组,
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+int
+main()
+{
+    char dest[10] = "dest";
+    printf("dest: address: %p content: %s\n", dest, dest);
+    char arr[6] = "hello";
+    printf("arr: %s\n", arr);
+    strcpy(dest,arr);
+    printf("dest: address: %p content: %s\n", dest, dest);
+    return 0;
+}
+```
+反汇编这一段main函数:
+![char_string](./pictures/char_string.png)
+可以看到定义数组时,字符串并非是在.rodata中的常量,而是直接由ascii码表示的.x86是little-ending,所以0x74736564表示的是"tsed",在实际的内存上倒过来,从内存低地址到高地址变成"dest".
 
 
 
