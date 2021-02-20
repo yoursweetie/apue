@@ -229,7 +229,6 @@ int main()
     }
     exit(0);
 }
-
 ```
 #### 编译成test ELF文件
 #### 这是`objdump -d test`反汇编的结果(只保留了main函数):
@@ -274,7 +273,7 @@ test:     file format elf64-x86-64
     11c1:	66 2e 0f 1f 84 00 00 	cs nop WORD PTR [rax+rax*1+0x0]
     11c8:	00 00 00 
     11cb:	0f 1f 44 00 00       	nop    DWORD PTR [rax+rax*1+0x0]
-    ```
+ ```
 
 赋值操作是从1160: `mov DWORD PTR [rbp-0x18],0x0`开始,[rbp-0x18]是赋值语句中的i, jmp到117b,判断i是否 <= 5, 若 <= 5则跳回1169继续赋值.
 注意1173`mov BYTE PTR [rbp+rax*1-0xe],dl`,dl中的值是从edx中截断的,而edx又是从eax中得到的,eax的值正是[rbp-0x18]的值,即i的值.
