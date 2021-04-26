@@ -354,8 +354,83 @@ main()
 ![char_string](./pictures/char_string.png)
 可以看到定义数组时,字符串并非是在.rodata中的常量,而是直接由ascii码表示的.x86是little-ending,所以0x74736564表示的是"tsed",在实际的内存上倒过来,从内存低地址到高地址变成"dest".
 
+## malloc
+```c
+/* /tmp/test_malloc.c */
+#include <stdio.h>
+#include <stdlib.h>
 
+int main()
+{
+    int *buf = (int *)malloc(sizeof(int) * 4);
+    for (int i = 0; i < 4; ++i)
+        buf[i] = i + 1;
 
+    /* stack */
+    printf("&buf: %p\n", &buf);
+    /* heap */
+    for (int i = 0; i < 4; ++i) {
+        printf("&buf[%d]: %p\n", i, &buf[i]);
+    }
+    free(buf);
+
+    int *buf1 = (int *)malloc(sizeof(int) * 4);
+    for (int i = 0; i < 4; ++i)
+        buf1[i] = i + 1;
+
+    /* stack */
+    printf("&buf1: %p\n", &buf1);
+    /* heap */
+    for (int i = 0; i < 4; ++i) {
+        printf("&buf1[%d]: %p\n", i, &buf1[i]);
+    }
+    free(buf1);
+    getchar();
+    return 0;
+}
+```
+buf定义在主函数中,是一个局部变量,所以buf是在stack上(高地址);
+buf指针变量存放的内容是地址,该地址是heap上的地址(低地址);
+malloc分配的内存如果并没有被free,那么下一次malloc分配的内存空间从上一次分配空间的尾地址开始分配;
+如果free了,那么就从上一次malloc分配的首地址开始分配.
+*运行结果:*
+```
+&buf: 0x7ffdbeeaf488
+&buf[0]: 0x5639c0c282a0
+&buf[1]: 0x5639c0c282a4
+&buf[2]: 0x5639c0c282a8
+&buf[3]: 0x5639c0c282ac
+&buf1: 0x7ffdbeeaf490
+&buf1[0]: 0x5639c0c282a0
+&buf1[1]: 0x5639c0c282a4
+&buf1[2]: 0x5639c0c282a8
+&buf1[3]: 0x5639c0c282ac
+```
+*虚拟地址空间:*
+```
+562fa3e2b000-562fa3e2c000 r--p 00000000 00:24 5087                       /tmp/test_malloc.c
+562fa3e2c000-562fa3e2d000 r-xp 00001000 00:24 5087                       /tmp/test_malloc.c
+562fa3e2d000-562fa3e2e000 r--p 00002000 00:24 5087                       /tmp/test_malloc.c
+562fa3e2e000-562fa3e2f000 r--p 00002000 00:24 5087                       /tmp/test_malloc.c
+562fa3e2f000-562fa3e30000 rw-p 00003000 00:24 5087                       /tmp/test_malloc.c
+562fa4434000-562fa4455000 rw-p 00000000 00:00 0                          [heap]
+7fc835764000-7fc835766000 rw-p 00000000 00:00 0 
+7fc835766000-7fc83578c000 r--p 00000000 103:01 7605615                   /usr/lib/libc-2.33.so
+7fc83578c000-7fc8358d8000 r-xp 00026000 103:01 7605615                   /usr/lib/libc-2.33.so
+7fc8358d8000-7fc835924000 r--p 00172000 103:01 7605615                   /usr/lib/libc-2.33.so
+7fc835924000-7fc835927000 r--p 001bd000 103:01 7605615                   /usr/lib/libc-2.33.so
+7fc835927000-7fc83592a000 rw-p 001c0000 103:01 7605615                   /usr/lib/libc-2.33.so
+7fc83592a000-7fc835935000 rw-p 00000000 00:00 0 
+7fc835969000-7fc83596a000 r--p 00000000 103:01 7605602                   /usr/lib/ld-2.33.so
+7fc83596a000-7fc83598e000 r-xp 00001000 103:01 7605602                   /usr/lib/ld-2.33.so
+7fc83598e000-7fc835997000 r--p 00025000 103:01 7605602                   /usr/lib/ld-2.33.so
+7fc835998000-7fc83599a000 r--p 0002e000 103:01 7605602                   /usr/lib/ld-2.33.so
+7fc83599a000-7fc83599c000 rw-p 00030000 103:01 7605602                   /usr/lib/ld-2.33.so
+7ffc86de8000-7ffc86e09000 rw-p 00000000 00:00 0                          [stack]
+7ffc86e88000-7ffc86e8c000 r--p 00000000 00:00 0                          [vvar]
+7ffc86e8c000-7ffc86e8e000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]
+```
 
 
 
